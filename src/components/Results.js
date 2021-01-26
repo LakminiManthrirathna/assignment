@@ -1,28 +1,67 @@
-import React from "react";
-import '../App.css';
-import {Switch, BrowserRouter as Router, Route, Link} from 'react-router-dom';
+import React, {useState} from "react";
+import { BrowserRouter as Router, Link, Route} from 'react-router-dom';
+import axios from 'axios';
 
 const Results = (props) => {
+    const [allRepos, setallRepos]= useState([]);
+    const [allFollowers, setallFollowers]= useState([]);
     const {users} = props;
-    console.log("users from results:" + users.items);
-    //console.log("user1"+users[0].login);
-    const listUsers = users.items;
-    //  console.log(users.items[0].login);
-
-    // console.log(listUsers.find(u => u.login === 'mia'));
-
-    // const listUsers = users.length !== 0 ? (users.data.map((item) => <li key={item.id}>{item.name}</li> )): (<li>no users found</li>);
-    //   return(<ul>{listUsers}</ul>);
+   
     const User = ({userid}) => {
-        const selectedUser = listUsers.find(u => u.id == userid);
-       // console.log('selectedUser'+selectedUser.id);
-        return (<div>cool</div>);
+        const selectedUser = users.find(u => u.id == userid);
+        const selectedUserLogin= selectedUser.login;
+        console.log('selectedUserLogin:'+selectedUserLogin);
+        const getUserRepos = async (selectedUserLogin) => {
+           const response = await axios("https://api.github.com/users/" + selectedUserLogin+"/repos")
+           .then((response) => {
+                setallRepos(response.data);
+           })
+           .catch((err) => {
+                   console.log(err);
+               }
+           );
+       };
+
+       const getUserFollowers = async (selectedUserLogin) => {
+            const response = await axios("https://api.github.com/users/" + selectedUserLogin+"/followers")
+            .then((response) => {
+                setallFollowers(response.data);
+            })
+            .catch((err) => {
+                    console.log(err);
+                }
+            );
+        };
+
+       getUserRepos(selectedUserLogin);
+       getUserFollowers(selectedUserLogin);
+       console.log('AllRepos:'+allRepos);
+   
+      return(
+          <div>
+           <div>Repositories:</div>
+           <ol className="removeBullets">
+                {allRepos.map(repo =>
+                    <li className="border-1">
+                        {repo.name}
+                    </li>)}
+            </ol>
+            <div>followers:</div>
+           <ol className="removeBullets">
+                {allFollowers.map(f =>
+                    <li className="border-1">
+                        {f.name}
+                    </li>)}
+            </ol>
+          </div>
+      )
+    
     };
 
     return (
-        <>
-            <ol className="mx-auto w-50 removeBullets">
-                {listUsers.map(user =>
+        <Router>
+            <ol className="mx-auto col-md-6 removeBullets">
+                {users.map(user =>
                     <li className="border-1 bg-light mb-4" key={user.id}>
                         <Link to={`/users/${user.id}`}>
                             <div className="w-100 d-flex justify-content-between"><img src={user.avatar_url}
@@ -32,12 +71,10 @@ const Results = (props) => {
                         </Link>
                     </li>)}
             </ol>
-            <div className="w-100 d-flex justify-content-center">
-                <p className="ml-5">i'm in</p>
-
-                <Route path="/users/:user" render={({match}) => (<User userid={match.params.user}/>)}/>
+            <div className="col-md-6">
+                <Route path="/users/:user" component={({match}) => (<User userid={match.params.user}/>)}/>
             </div>
-        </>);
+        </Router>);
 };
 
 export default Results;
